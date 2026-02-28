@@ -7,7 +7,9 @@ const createCategory = async (req, res) => {
   try { 
     const { categoryName, prefix, rangeStart, rangeEnd } = req.body;
 
-    if (!categoryName || !prefix || rangeStart === undefined || rangeEnd === undefined) {
+    
+
+    if (!categoryName || rangeStart === undefined || rangeEnd === undefined) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
@@ -33,7 +35,7 @@ const getAllCategories = async (req, res) => {
 const updateCategory = async (req, res) => {
   try {
     const { categoryName, prefix, rangeStart, rangeEnd } = req.body;
-
+     console.log('Received update data:', { categoryName, prefix, rangeStart, rangeEnd });
     const updated = await Purchasecategory.findByIdAndUpdate(
       req.params.id,
       { categoryName, prefix, rangeStart, rangeEnd },

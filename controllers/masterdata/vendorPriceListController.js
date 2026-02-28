@@ -1,15 +1,28 @@
 const VendorPriceList = require('../../models/masterdata/VendorPriceList');
-
+const Vendor = require('../../models/masterdata/Vendor');
 // Create Vendor Price List
 exports.createVendorPrice = async (req, res) => {
   try {
     const { categoryId, vendorId, materialId, unit, bum,price, orderUnit,taxId,buyer,companyId, financialYear } = req.body;
+   
+    console.log("Received data for new vendor price entry:", orderUnit);
+   if (!categoryId || !vendorId || !materialId || !unit || !bum || !orderUnit || !price) {
+  return res.status(400).json({ message: 'All fields are required' });
+}
 
-    if (!categoryId || !vendorId || !materialId || !unit || !bum || !orderUnit) {
-      return res.status(400).json({ message: 'All fields are required' });
-    }
-
-    const newEntry = new VendorPriceList({ categoryId, vendorId, materialId, unit,price, bum, orderUnit,taxId,buyer, companyId,financialYear});
+    const newEntry = new VendorPriceList({
+  categoryId,
+  vendorId,
+  materialId,
+  unit,
+  bum: Number(bum),
+  price: Number(price),
+  orderUnit: Number(orderUnit),
+  taxId,
+  buyer,
+  companyId,
+  financialYear
+});
     await newEntry.save();
     res.status(201).json(newEntry);
   } catch (error) {
@@ -67,8 +80,8 @@ exports.getVendorPriceById = async (req, res) => {
   // Update vendor price list
 exports.updateVendorPriceList = async (req, res) => {
     try {
-      console.log('Update request for ID:', req.params.id);
-      console.log('Update data:', req.body);
+      // console.log('Update request for ID:', req.params.id);
+      // console.log('Update data:', req.body);
   
       // Validate the ID format
       if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {

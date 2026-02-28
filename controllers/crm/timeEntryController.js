@@ -18,7 +18,15 @@ const timeEntryController = {
   // Create new time entry
   createTimeEntry: async (req, res) => {
     try {
-      const timeEntry = new TimeEntry(req.body);
+      
+      const data = req.body;
+
+     if(data.taskId === undefined || data.taskId === null || data.taskId === ''){
+      delete data.taskId;
+     }
+
+     
+      const timeEntry = new TimeEntry(data);
       await timeEntry.save();
       await timeEntry.populate([
         { path: 'projectId', select: 'projectName' },
@@ -48,9 +56,15 @@ const timeEntryController = {
   // Update time entry
   updateTimeEntry: async (req, res) => {
     try {
+      const data = req.body;
+
+     if(data.taskId === undefined || data.taskId === null || data.taskId === ''){
+      delete data.taskId;
+     }
+
       const timeEntry = await TimeEntry.findByIdAndUpdate(
         req.params.id,
-        req.body,
+        data,
         { new: true, runValidators: true }
       ).populate([
         { path: 'projectId', select: 'projectName' },

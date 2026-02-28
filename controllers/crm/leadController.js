@@ -5,8 +5,19 @@ const leadController = {
   // Get all leads
   getLeads: async (req, res) => {
     try {
-      const { companyId, financialYear } = req.query;
-      const leads = await Lead.find({ companyId, financialYear })
+      const { companyId, financialYear,status } = req.query;
+       
+      const filter={}
+      if(companyId){
+        filter.companyId=companyId
+      }
+      if(financialYear){
+        filter.financialYear=financialYear
+      }
+      if(status){
+        filter.leadStatus=status
+      }
+      const leads = await Lead.find(filter)
         .populate('campaignId', 'campaignName')
         .sort({ createdAt: -1 });
       

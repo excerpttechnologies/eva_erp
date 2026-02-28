@@ -8,7 +8,8 @@ const timeEntrySchema = new mongoose.Schema({
   },
   taskId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Task'
+    ref: 'Task',
+    required: false
   },
   description: {
     type: String,

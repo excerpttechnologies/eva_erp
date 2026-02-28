@@ -26,7 +26,7 @@ const createInvoiceCategory = async (req, res) => {
 const getAllInvoiceCategories = async (req, res) => {
   try {
     const { companyId } = req.query;
-
+    console.log('Fetching categories for companyId:', companyId);
     const categories = await InvoiceCategory.find({ companyId });
     res.json(categories);
   } catch (err) {

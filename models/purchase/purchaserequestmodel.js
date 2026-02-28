@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const purchaseCategorySchema = new mongoose.Schema({
   categoryName: { type: String, required: true },
-  prefix: { type: String, required: true },
+  prefix: { type: String },
   rangeStart: { type: Number, required: true },
   rangeEnd: { type: Number, required: true } 
 }, { timestamps: true });

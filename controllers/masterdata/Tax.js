@@ -8,8 +8,10 @@ exports.createTax = async (req, res) => {
     if (!taxCode || !taxName || !cgst || !sgst  || !companyId || !financialYear) {
       return res.status(400).json({ error: 'All fields are required' });
     }
-
+      
     const tax = new Tax(req.body);
+
+    
     await tax.save();
     res.status(201).json({ message: 'Tax added successfully', tax });
   } catch (err) {
@@ -22,6 +24,7 @@ exports.createTax = async (req, res) => {
 exports.getTaxes = async (req, res) => {
   try {
     const { companyId, financialYear } = req.query;
+
     const taxes = await Tax.find({ companyId, financialYear }).sort({ createdAt: -1 });
     res.json(taxes);
   } catch (err) { 

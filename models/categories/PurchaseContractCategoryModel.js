@@ -6,23 +6,17 @@ const purchaseContractCategorySchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  // prefix: {
-  //   type: String,
-  //   required: true,
-  //   trim: true,
-  //   uppercase: true
-  // },
   rangeFrom: {
     type: Number,
     required: true,
-    min: 100000,
-    max: 999999
+    min: 1,
+    
   },
   rangeTo: {
     type: Number,
     required: true,
-    min: 100000,
-    max: 999999
+    min: 1,
+   
   },
   isActive: {
     type: Boolean,
@@ -36,8 +30,8 @@ const purchaseContractCategorySchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-   companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
-    financialYear: String,
+  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
+  financialYear: String,
 });
 
 // Validate that rangeTo is greater than or equal to rangeFrom
@@ -52,7 +46,6 @@ purchaseContractCategorySchema.pre('save', function(next) {
 
 // Create indexes for better performance
 purchaseContractCategorySchema.index({ categoryName: 1 });
-purchaseContractCategorySchema.index({ prefix: 1 });
 purchaseContractCategorySchema.index({ isActive: 1 });
 
 module.exports = mongoose.model('PurchaseContractCategory', purchaseContractCategorySchema);

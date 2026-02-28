@@ -3,6 +3,72 @@ const Lead = require('../../models/crm/Lead');
 const { validationResult } = require('express-validator');
 
 // Get all proposals
+// const getAllProposals = async (req, res) => {
+//     try {
+//         const { 
+//             status, 
+//             search, 
+//             priority,
+//             page = 1, 
+//             limit = 20, 
+//             sortBy = 'createdAt', 
+//             sortOrder = 'desc' 
+//         } = req.query;
+        
+//         // Build query
+//         let query = {};
+        
+//         if (status) {
+//             query.status = status;
+//         }
+        
+//         if (priority) {
+//             query.priority = priority;
+//         }
+        
+//         if (search) {
+//             query.$or = [
+//                 { proposalNumber: { $regex: search, $options: 'i' } },
+//                 { title: { $regex: search, $options: 'i' } },
+//                 { description: { $regex: search, $options: 'i' } }
+//             ];
+//         }
+        
+//         // Calculate skip value for pagination
+//         const skip = (page - 1) * limit;
+        
+//         // Build sort object
+//         const sort = {};
+//         sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+        
+//         // Execute query with pagination and populate lead data
+//         const proposals = await Proposal.find(query)
+//             .populate('leadId', 'companyName contactPersonName email phoneNumber leadStatus')
+//             .sort(sort)
+//             .skip(skip)
+//             .limit(parseInt(limit));
+        
+//         // Get total count for pagination
+//         const total = await Proposal.countDocuments(query);
+        
+//         res.json({
+//             proposals,
+//             pagination: {
+//                 current: parseInt(page),
+//                 pages: Math.ceil(total / limit),
+//                 total,
+//                 limit: parseInt(limit)
+//             }
+//         });
+//     } catch (error) {
+//         console.error('Error fetching proposals:', error);
+//         res.status(500).json({ 
+//             message: 'Error fetching proposals', 
+//             error: error.message 
+//         });
+//     }
+// };
+
 const getAllProposals = async (req, res) => {
     try {
         const { 
@@ -14,18 +80,16 @@ const getAllProposals = async (req, res) => {
             sortBy = 'createdAt', 
             sortOrder = 'desc' 
         } = req.query;
-        
-        // Build query
+
+        // ✅ Convert to numbers properly
+        const pageNumber = parseInt(page) || 1;
+        const limitNumber = parseInt(limit) || 20;
+
         let query = {};
-        
-        if (status) {
-            query.status = status;
-        }
-        
-        if (priority) {
-            query.priority = priority;
-        }
-        
+
+        if (status) query.status = status;
+        if (priority) query.priority = priority;
+
         if (search) {
             query.$or = [
                 { proposalNumber: { $regex: search, $options: 'i' } },
@@ -33,33 +97,32 @@ const getAllProposals = async (req, res) => {
                 { description: { $regex: search, $options: 'i' } }
             ];
         }
-        
-        // Calculate skip value for pagination
-        const skip = (page - 1) * limit;
-        
-        // Build sort object
+
+        // ✅ Correct skip calculation
+        const skip = (pageNumber - 1) * limitNumber;
+
+        // ✅ Force proper sorting (newest first)
         const sort = {};
-        sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
-        
-        // Execute query with pagination and populate lead data
+        sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
         const proposals = await Proposal.find(query)
             .populate('leadId', 'companyName contactPersonName email phoneNumber leadStatus')
             .sort(sort)
             .skip(skip)
-            .limit(parseInt(limit));
-        
-        // Get total count for pagination
+            .limit(limitNumber);
+
         const total = await Proposal.countDocuments(query);
-        
+
         res.json({
             proposals,
             pagination: {
-                current: parseInt(page),
-                pages: Math.ceil(total / limit),
+                current: pageNumber,
+                pages: Math.ceil(total / limitNumber),
                 total,
-                limit: parseInt(limit)
+                limit: limitNumber
             }
         });
+
     } catch (error) {
         console.error('Error fetching proposals:', error);
         res.status(500).json({ 
@@ -99,10 +162,11 @@ const getProposalById = async (req, res) => {
 // FIXED: Create new proposal with proper number generation
 const createProposal = async (req, res) => {
     try {
-        console.log('Creating proposal with data:', req.body);
+        
         
         // Check for validation errors
         const errors = validationResult(req);
+        console.log('Validation errors:', errors.array());
         if (!errors.isEmpty()) {
             return res.status(400).json({ 
                 message: 'Validation errors', 
@@ -111,9 +175,9 @@ const createProposal = async (req, res) => {
         }
         
         const proposalData = req.body;
-        proposalData.createdBy = '';
+        // proposalData.createdBy = '';
         proposalData.assignedTo = '';
-        
+        console.log('Creating proposal with data test:', proposalData);
         // Verify that the lead exists
         const lead = await Lead.findById(proposalData.leadId);
         if (!lead) {

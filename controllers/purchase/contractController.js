@@ -1,58 +1,93 @@
-const Contract = require('../../models/purchase/Contract')
+const Contract = require('../../models/purchase/Contract');
 const ContractCategory = require('../../models/categories/PurchaseContractCategoryModel');
 
 // Generate Contract Number
 async function generateCTNRNumber(categoryId) {
   try {
+    // await Contract.collection.dropIndex("contractNumber_1")
     const category = await ContractCategory.findById(categoryId);
     if (!category) throw new Error('Contract Category not found');
     
+    console.log('='.repeat(30));
+    console.log('Generating number for category:', category.categoryName);
     console.log('Category range:', category.rangeFrom, 'to', category.rangeTo);
     
-    // Find ALL contracts for this category to determine the highest number
+    // Find ALL contracts for this category
     const existingContracts = await Contract.find({ 
-      contractCategoryId: categoryId, contractNumberType: 'internal'
+      contractCategoryId: categoryId
     }).select('contractNumber');
     
+    console.log('Found contracts in category:', existingContracts.length);
+    
+    // Convert all existing contract numbers to numbers and filter by range
+    const usedNumbers = existingContracts
+      .map(contract => {
+        // Parse the contract number - remove any non-numeric and convert to number
+        const numStr = contract.contractNumber.toString().replace(/[^0-9]/g, '');
+        const num = parseInt(numStr, 10);
+        return { original: contract.contractNumber, parsed: num };
+      })
+      .filter(item => !isNaN(item.parsed) && item.parsed >= category.rangeFrom && item.parsed <= category.rangeTo)
+      .map(item => item.parsed)
+      .sort((a, b) => a - b);
+    
+    console.log('Used numbers in range:', usedNumbers);
+    
+    // If no numbers used yet, start from rangeFrom
+    if (usedNumbers.length === 0) {
+      console.log('No numbers used, starting from:', category.rangeFrom);
+      return category.rangeFrom.toString();
+    }
+    
+    // Find the first gap in the sequence
     let nextNumber = category.rangeFrom;
     
-    if (existingContracts.length > 0) {
-      console.log('Found existing contracts:', existingContracts.length);
-      
-      // Extract all numbers and find the maximum
-      const usedNumbers = existingContracts
-        .map(contract => {
-          // Don't strip prefix - parse the full number part
-          const numberPart = contract.contractNumber.replace(category.prefix, '');
-          return parseInt(numberPart, 10);
-        })
-        .filter(num => !isNaN(num) && num >= category.rangeFrom && num <= category.rangeTo); // Filter valid numbers within range
-      
-      if (usedNumbers.length > 0) {
-        const maxUsedNumber = Math.max(...usedNumbers);
-        console.log('Highest used number:', maxUsedNumber);
-        nextNumber = maxUsedNumber + 1;
+    for (let i = 0; i < usedNumbers.length; i++) {
+      if (usedNumbers[i] !== nextNumber) {
+        // Found a gap
+        console.log(`Gap found: expected ${nextNumber}, got ${usedNumbers[i]}`);
+        break;
       }
+      nextNumber++;
     }
     
-    console.log('Next number to use:', nextNumber);
+    console.log('Next available number:', nextNumber);
     
+    // Check if we've exceeded the range
     if (nextNumber > category.rangeTo) {
-      throw new Error(`Contract number exceeded category range. Next: ${nextNumber}, Max: ${category.rangeTo}`);
+      throw new Error(`Contract number range exhausted for category ${category.categoryName}. No numbers available between ${category.rangeFrom} and ${category.rangeTo}`);
     }
     
-    const generatedContractNumber = `${nextNumber}`;
-    console.log('Generated Contract Number:', generatedContractNumber);
-    
-    // Optional: Add a check to ensure this number doesn't already exist
-    const existingContract = await Contract.findOne({ 
-      contractNumber: `${category.prefix}${generatedContractNumber}` 
+    // One final check
+    const finalCheck = await Contract.findOne({ 
+      contractNumber: nextNumber.toString(),
+      contractCategoryId: categoryId
     });
-    if (existingContract) {
-      throw new Error(`Contract number ${category.prefix}${generatedContractNumber} already exists`);
+    
+    if (finalCheck) {
+      console.log('Number still taken, searching sequentially...');
+      
+      // Sequential search from nextNumber+1
+      for (let i = nextNumber + 1; i <= category.rangeTo; i++) {
+        const checkExisting = await Contract.findOne({
+          contractNumber: i.toString(),
+          contractCategoryId: categoryId
+        });
+        
+        if (!checkExisting) {
+          console.log('Found available number:', i);
+          return i.toString();
+        }
+      }
+      
+      throw new Error('No available numbers found after sequential search');
     }
     
-    return generatedContractNumber;
+    console.log('Generated number:', nextNumber);
+    console.log('='.repeat(30));
+    
+    return nextNumber.toString();
+    
   } catch (error) {
     console.error('Error in generateCTNRNumber:', error);
     throw error;
@@ -64,49 +99,180 @@ exports.createContract = async (req, res) => {
     try {
         const { contractGenType, externalContractNumber, ...otherData } = req.body;
         const contractCategoryId = req.body.categoryId;
-        // console.log('Received data:', req.body);
+        
+        console.log('='.repeat(50));
+        console.log('Creating contract with data:', {
+            contractGenType,
+            categoryId: contractCategoryId,
+            externalContractNumber: externalContractNumber || 'N/A'
+        });
+        
+        // Validate required fields
+        if (!contractCategoryId) {
+            return res.status(400).json({ error: 'Category ID is required' });
+        }
+        
+        if (!otherData.companyId) {
+            return res.status(400).json({ error: 'Company ID is required' });
+        }
+        
         let contractNumber;
-
+   
         if (contractGenType === 'external') {
             if (!externalContractNumber || externalContractNumber.trim() === '') {
                 return res.status(400).json({ error: 'External contract number is required' });
             }
 
+            // Check if external contract number already exists for this category
             const existingContract = await Contract.findOne({
-                contractNumber: externalContractNumber.trim()
+                contractNumber: externalContractNumber.trim(),
+                contractCategoryId: contractCategoryId
             });
 
             if (existingContract) {
-                return res.status(400).json({ error: 'Contract number already exists' });
+                return res.status(400).json({ 
+                    error: 'Contract number already exists for this category',
+                    details: `Contract number ${externalContractNumber.trim()} is already in use`
+                });
             }
 
             contractNumber = externalContractNumber.trim();
         } else {
-            contractNumber = await generateCTNRNumber(contractCategoryId);
+            // Internal generation
+            try {
+                contractNumber = await generateCTNRNumber(contractCategoryId);
+                console.log('Successfully generated internal contract number:', contractNumber);
+            } catch (genError) {
+                console.error('Number generation error:', genError);
+                return res.status(400).json({ 
+                    error: 'Failed to generate contract number',
+                    details: genError.message
+                });
+            }
         }
 
-        const contract = new Contract({
+        // Create the contract
+        const contractData = {
             contractNumber,
             contractCategoryId,
             contractGenType: contractGenType || 'internal',
             ...otherData
-        });
-// console.log('Contract data:', contract);
+        };
+        
+        // Remove any undefined fields
+        Object.keys(contractData).forEach(key => 
+          contractData[key] === undefined && delete contractData[key]
+        );
+        
+        console.log('Creating contract with number:', contractNumber);
+        
+        const contract = new Contract(contractData);
+
         await contract.save();
+        
+        console.log('Contract saved successfully with number:', contractNumber);
+        console.log('='.repeat(50));
+        
         res.status(201).json({
             message: 'Contract created successfully',
             contract,
             generationType: contractGenType
         });
+        
     } catch (error) {
         console.error('Error creating contract:', error);
 
         if (error.code === 11000) {
-            return res.status(400).json({ error: 'Contract number already exists' });
+            console.error('Duplicate key error details:', error.keyValue);
+            
+            // Return clear error message
+            return res.status(400).json({ 
+                error: 'Contract number already exists',
+                details: `The number ${error.keyValue?.contractNumber} is already in use. Please try again.`
+            });
         }
 
-        res.status(500).json({ error: 'Failed to create contract' });
+        res.status(500).json({ 
+            error: 'Failed to create contract',
+            details: error.message 
+        });
     }
+};
+
+// Debug route to check numbers in a category
+exports.checkCategoryNumbers = async (req, res) => {
+    try {
+        const { categoryId } = req.params;
+        
+        const contracts = await Contract.find({ contractCategoryId: categoryId })
+            .select('contractNumber contractGenType createdAt')
+            .sort({ contractNumber: 1 });
+        
+        const category = await ContractCategory.findById(categoryId);
+        
+        const numbers = contracts.map(c => ({
+            number: c.contractNumber,
+            type: c.contractGenType,
+            date: c.createdAt
+        }));
+        
+        // Find gaps
+        const usedNumbers = contracts
+            .map(c => parseInt(c.contractNumber.toString().replace(/[^0-9]/g, ''), 10))
+            .filter(n => !isNaN(n))
+            .sort((a, b) => a - b);
+        
+        const gaps = [];
+        if (usedNumbers.length > 0 && category) {
+            let expected = category.rangeFrom;
+            for (let num of usedNumbers) {
+                if (num < category.rangeFrom) continue;
+                if (num > category.rangeTo) break;
+                if (num > expected) {
+                    gaps.push({ from: expected, to: num - 1 });
+                }
+                expected = num + 1;
+            }
+            if (expected <= category.rangeTo) {
+                gaps.push({ from: expected, to: category.rangeTo });
+            }
+        }
+        
+        res.json({
+            category: category?.categoryName || 'Unknown',
+            range: category ? `${category.rangeFrom} - ${category.rangeTo}` : 'N/A',
+            totalContracts: contracts.length,
+            contracts: numbers,
+            nextAvailable: gaps.length > 0 ? gaps[0].from : 'Range full',
+            gaps: gaps
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Test route
+exports.testApi = async (req, res) => {
+  try {
+    const totalContracts = await Contract.countDocuments();
+    const categories = await ContractCategory.find();
+    
+    res.json({ 
+      message: 'API is working', 
+      timestamp: new Date().toISOString(),
+      status: 'ok',
+      stats: {
+        totalContracts,
+        totalCategories: categories.length
+      }
+    });
+  } catch (error) {
+    res.json({ 
+      message: 'API is working', 
+      timestamp: new Date().toISOString(),
+      status: 'ok'
+    });
+  }
 };
 
 // Get All Contracts
@@ -114,12 +280,11 @@ exports.getAllContracts = async (req, res) => {
     try {
         const { companyId, financialYear } = req.query;
 
-    const filter = {};
-    if (companyId) filter.companyId = companyId;
-    if (financialYear) filter.financialYear = financialYear;
+        const filter = {};
+        if (companyId) filter.companyId = companyId;
+        if (financialYear) filter.financialYear = financialYear;
 
-        const contracts = await Contract.find(filter)
-
+        const contracts = await Contract.find(filter).populate('contractCategoryId', 'categoryName');
         res.json(contracts);
     } catch (error) {
         console.error('Error fetching contracts:', error);
@@ -130,7 +295,7 @@ exports.getAllContracts = async (req, res) => {
 // Get Contract by ID
 exports.getContractById = async (req, res) => {
     try {
-        const contract = await Contract.findById(req.params.id).populate('contractCategoryId', 'categoryName prefix');
+        const contract = await Contract.findById(req.params.id).populate('contractCategoryId', 'categoryName');
         if (!contract) return res.status(404).json({ message: 'Contract not found' });
         res.json(contract);
     } catch (error) {
@@ -142,46 +307,10 @@ exports.getContractById = async (req, res) => {
 // Update Contract
 exports.updateContractById = async (req, res) => {
     try {
-        const {
-            indentId,
-            categoryId,
-            contractCategoryId,
-            vendor,
-            vendorName,
-            contractReference,
-            cnNo,
-            validityFDate,
-            validityTDate,
-            note,
-            location,
-            buyerGroup,
-            totalPrice,
-            items
-        } = req.body;
-
-        const calculatedTotalPrice = totalPrice || items.reduce((sum, item) => {
-            return sum + (parseFloat(item.price) || 0);
-        }, 0);
-
         const updatedContract = await Contract.findByIdAndUpdate(
             req.params.id,
-            {
-                indentId,
-                categoryId,
-                contractCategoryId,
-                vendor,
-                vendorName,
-                contractReference,
-                cnNo,
-                validityFDate,
-                validityTDate,
-                note,
-                location,
-                buyerGroup,
-                totalPrice: calculatedTotalPrice,
-                items
-            },
-            { new: true }
+            req.body,
+            { new: true, runValidators: true }
         );
 
         if (!updatedContract) {

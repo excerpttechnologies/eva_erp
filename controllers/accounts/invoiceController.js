@@ -5,7 +5,7 @@ const InvoiceCategory = require('../../models/categories/InvoiceCategory');
 const createInvoice = async (req, res) => {
   try {
     const data = req.body;
-
+    // console.log("Received invoice data createInvoice:", data);
     if (!data.category) {
       return res.status(400).json({ message: "Category is required" });
     }

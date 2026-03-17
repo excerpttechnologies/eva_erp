@@ -39,83 +39,8 @@
 //   }
 // };
 const IndentRequest = require('../../models/purchase/IndentRequestModel');
-const PurchaseCategory = require('../../models/purchase/purchaserequestmodel');
+ const PurchaseCategory = require('../../models/purchase/purchaserequestmodel');
 
-// exports.createIndent = async (req, res) => {
-//   try {
-//     const { indentIdType, externalIndentId, categoryId, items, financialYear,companyId} = req.body;
-
-//     let indentId;
-//     console.log('Received categoryId:', categoryId);
-//     console.log('Received items:', req.body);
-
-//     const category = await PurchaseCategory.findById(categoryId);
-//     if (!category) return res.status(404).json({ message: 'Category not found' });
-
-
-//     if (indentIdType === 'external') {
-//       if (!externalIndentId || externalIndentId.trim() === '') {
-//         return res.status(400).json({ error: 'External Indent ID is required' });
-//       }
-
-//       if (externalIndentId.length > 50) {
-//         return res.status(400).json({ error: 'External Indent ID cannot exceed 50 characters' });
-//       }
-
-//       // Optional: Add validation for special characters or format
-//       const validIdPattern = /^[A-Za-z0-9_-]+$/;
-//       if (!validIdPattern.test(externalIndentId)) {
-//         return res.status(400).json({ error: 'External Indent ID can only contain letters, numbers, hyphens, and underscores' });
-//       }
-//       indentId = externalIndentId;
-//     } else if (indentIdType === 'internal') {
-//       if (!category.rangeStart) {
-//         return res.status(400).json({ error: 'Category range start not defined' });
-//       }
-      
-//       const rangeStart = category.rangeStart;
-//       console.log('Category rangeStart:', rangeStart);
-//       // Find latest indent for this specific category
-//       const latest = await IndentRequest.findOne({ categoryId, indentIdType: 'internal' })
-//         .sort({ createdAt: -1 });
-//       console.log('Latest indent found:', latest);
-//       let nextNumber = rangeStart;
-//       if (latest && latest.indentId) {
-//         const lastNumber = parseInt(latest.indentId);
-//         nextNumber = lastNumber + 1;
-//       }
-//       console.log('Next indent number:', nextNumber);
-//       indentId = `${nextNumber}`;
-//       console.log('Generated internal indentId:', indentId);
-//     }
-//     if (indentId !== "") {
-//       const newIndent = new IndentRequest({
-//         indentId,
-//         categoryId,
-//         indentIdType,
-//         companyId,
-//         financialYear,
-//         documentDate: req.body.documentDate || '', // Optional field, can be empty
-//         location: req.body.location || '', // Optional field, can be empty
-//         buyerGroup: req.body.buyerGroup || '', // Optional field, can be empty
-//         categoryName: category.categoryName,
-//         items,
-//       });
-
-//       await newIndent.save();
-
-//       res.status(201).json({ message: 'Indent created successfully', indentId });
-//     }
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: 'Server error' });
-//   }
-// };
-
-
-
-
-// controllers/indentController.js
 
 exports.createIndent = async (req, res) => {
   try {
@@ -126,6 +51,7 @@ exports.createIndent = async (req, res) => {
     console.log('Received items:', req.body);
 
     const category = await PurchaseCategory.findById(categoryId);
+    console.log('Fetched category:', category);
     if (!category) return res.status(404).json({ message: 'Category not found' });
 
     if (indentIdType === 'external') {
@@ -212,12 +138,13 @@ exports.getAllIndents = async (req, res) => {
 
   try {
      const { companyId, financialYear } = req.query;
-console.log('Fetching all indents for companyId:', companyId, 'and financialYear:', financialYear);
+
     const filter = {};
     if (companyId) filter.companyId = companyId;
     if (financialYear) filter.financialYear = financialYear;
 
     const allIndents = await IndentRequest.find(filter).sort({ createdAt: -1 });
+      console.log('Fetched indents:', allIndents.length);
     res.status(200).json(allIndents);
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch indents' });

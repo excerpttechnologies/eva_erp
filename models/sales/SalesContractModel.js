@@ -12,6 +12,7 @@ const itemSchema = new mongoose.Schema({
 
 const salesContractSchema = new mongoose.Schema({
   contractNumber: { type: String, required: true, unique: true },
+  contractNumberType: { type: String, enum: ['internal', 'external'], default: 'internal' }, // ADD THIS FIELD
   indentId: String,
   categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'SaleContractCategory' },
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },

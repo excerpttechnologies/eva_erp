@@ -133,19 +133,20 @@ exports.createSalesDelivery = async (req, res) => {
 exports.getAllSalesDeliveries = async (req, res) => {
   const { companyId, financialYear } = req.query;
   
-  if (!companyId || !financialYear) {
+  if (!companyId) {
     return res.status(400).json({ 
       error: 'companyId and financialYear are required' 
     });
   }
   
+  const filter = { companyId };
+  if (financialYear) {
+    filter.financialYear = financialYear;
+  }
   console.log('Fetching sales deliveries for:', companyId, financialYear);
   
   try {
-    const deliveries = await SalesDelivery.find({ 
-      companyId, 
-      financialYear 
-    })
+    const deliveries = await SalesDelivery.find(filter)
     .populate('salesOrderId', 'soNumber customerName')
     .populate('categoryId', 'categoryName')
     .sort({ createdAt: -1 });

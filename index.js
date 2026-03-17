@@ -74,7 +74,7 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/uploads', express.static('uploads'));
+// app.use('/uploads', express.static('uploads'));
 // In your server.js or app.js
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // In your server
@@ -200,7 +200,7 @@ app.use("/api/salary-records", salaryRoutes);
 
 const masterDataImportRoutes = require('./routes/master-data-import');
 app.use('/api/attendance', attendanceRoutes);
-app.use('/api/attendance', employeeRoutes);
+// app.use('/api/attendance', employeeRoutes);
 
 
 
@@ -210,7 +210,10 @@ app.use(history());
 app.use(express.static(path.join(__dirname, 'dist')));
 
 // Fallback route for SPA (React Router)
-app.get('*', (req, res) => {
+// app.get('*', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+// });
+app.get('/{*splat}', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 

@@ -23,6 +23,12 @@ const vendorSchema = new mongoose.Schema({
   contactNo: String,
   contactname: String,
   email: String,
+  gstin: {
+    type: String,
+    trim: true,
+    uppercase: true, // auto uppercase
+    default: ''
+  },
   isDeleted: {
     type: Boolean,
     default: false

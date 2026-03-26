@@ -2,15 +2,40 @@ const Industry = require('../../models/crm/Industry');
 
 const industryController = {
   // Get all industries
-  getIndustries: async (req, res) => {
-    try {
-      const { companyId, financialYear } = req.query;
-      const industries = await Industry.find({ companyId, financialYear }).sort({ createdAt: -1 });
-      res.json(industries);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+  // getIndustries: async (req, res) => {
+  //   try {
+  //     const { companyId, financialYear } = req.query;
+  //     const industries = await Industry.find({ companyId, financialYear }).sort({ createdAt: -1 });
+  //     res.json(industries);
+  //   } catch (error) {
+  //     res.status(500).json({ error: error.message });
+  //   }
+  // },
+
+getIndustries: async (req, res) => {
+  try {
+    let { companyId, financialYear } = req.query;
+
+    const query = {};
+
+    if (companyId && companyId !== "null" && companyId !== "undefined") {
+      query.companyId = companyId;
     }
-  },
+
+    if (financialYear && financialYear !== "null" && financialYear !== "undefined") {
+      query.financialYear = financialYear.trim();
+    }
+
+    console.log("🔥 QUERY:", query);
+
+    const industries = await Industry.find(query).sort({ createdAt: -1 });
+
+    res.json(industries);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+},
 
   // Create new industry
   createIndustry: async (req, res) => {

@@ -36,16 +36,26 @@ const projectSchema = new mongoose.Schema({
     enum: ['Low', 'Medium', 'High', 'Critical'],
     default: 'Medium'
   },
-  projectManager: [{
-    type: mongoose.Schema.Types.ObjectId,
-       ref: "Employee",
-       required: true
-  }],
-  teamMembers: [{
-    type: mongoose.Schema.Types.ObjectId,
-       ref: "Employee",
-       required: true
-  }],
+  // projectManager: [{
+  //   type: mongoose.Schema.Types.ObjectId,
+  //      ref: "Employee",
+  //      required: true
+  // }],
+  // teamMembers: [{
+  //   type: mongoose.Schema.Types.ObjectId,
+  //      ref: "Employee",
+  //      required: true
+  // }],
+
+projectManager: [{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Employee"
+}],
+teamMembers: [{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Employee"
+}],
+  
   technologies: [{
     type: String,
     trim: true
@@ -60,7 +70,7 @@ const projectSchema = new mongoose.Schema({
   },
   financialYear: {
     type: String,
-    required: true
+    default: null
   },
   isActive: {
     type: Boolean,
@@ -73,3 +83,5 @@ const projectSchema = new mongoose.Schema({
 projectSchema.index({ companyId: 1, financialYear: 1 });
 
 module.exports = mongoose.model('Project', projectSchema);
+
+

@@ -18,11 +18,11 @@ const lostReasonSchema = new mongoose.Schema({
   },
   companyId: {
     type: String,
-    required: true
+    required: false
   },
   financialYear: {
     type: String,
-    required: true
+    required: false
   },
   isActive: {
     type: Boolean,

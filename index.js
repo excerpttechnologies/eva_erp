@@ -170,6 +170,7 @@ app.use('/api/crm/lost-reasons', require('./routes/crm/lostReasons'));
 app.use('/api/crm/contact-stages', require('./routes/crm/contactStages'));
 app.use('/api/crm/industries', require('./routes/crm/industries'));
 app.use('/api/crm/calls', require('./routes/crm/calls'));
+// app.use('/api/projects', require('./routes/crm/project'));
 app.use('/api/projects', require('./routes/crm/projects'));
 app.use('/api/tasks', require('./routes/crm/tasks'));
 app.use('/api/milestones', require('./routes/crm/milestones'));
@@ -210,14 +211,14 @@ app.use(history());
 app.use(express.static(path.join(__dirname, 'dist')));
 
 // Fallback route for SPA (React Router)
-// app.get('*', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-// });
-app.get('/{*splat}', (req, res) => {
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
+// app.get('/{*splat}', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+// });
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-  console.log(`Server running on port http://localhost:${PORT}`);
+  console.log(`Server running on port http://localhost:8080`);
 });

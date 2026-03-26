@@ -25,11 +25,12 @@ exports.createVendor = async (req, res) => {
       // Generate internal vendor ID
       vnNo = await generateVNNo(req.body.categoryId);
     }
-
+    const { gstin, vendorIdType, externalVendorId, ...otherData } = req.body;
     const newVendor = new Vendor({ 
       ...req.body, 
       vnNo,
       // Remove these fields from the saved data as they're not part of the schema
+       gstin: req.body.gstin ? req.body.gstin.trim().toUpperCase() : '',
       vendorIdType: undefined,
       externalVendorId: undefined
     });
@@ -59,9 +60,27 @@ exports.getVendors = async (req, res) => {
 };
 
 // Update vendor
+// exports.updateVendor = async (req, res) => {
+//   try {
+//     const updated = await Vendor.findByIdAndUpdate(req.params.id, req.body, { new: true });
+//     res.json(updated);
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// };
 exports.updateVendor = async (req, res) => {
   try {
-    const updated = await Vendor.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updatedData = {
+      ...req.body,
+      gstin: req.body.gstin ? req.body.gstin.trim().toUpperCase() : ''
+    };
+
+    const updated = await Vendor.findByIdAndUpdate(
+      req.params.id,
+      updatedData,
+      { new: true }
+    );
+
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -71,6 +90,7 @@ exports.updateVendor = async (req, res) => {
 // Update isDeleted or isBlocked
 exports.updateVendorStatus = async (req, res) => {
   try {
+    const { isDeleted, isBlocked } = req.body;
     const updated = await Vendor.findByIdAndUpdate(
       req.params.id,
       req.body,

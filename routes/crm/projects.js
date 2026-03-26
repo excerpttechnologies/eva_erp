@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const projectController = require('../../controllers/crm/ProjectController');
+const projectController = require('../../controllers/crm1/ProjectController');
 
 // GET /api/projects - Get all projects
 router.get('/', projectController.getProjects);

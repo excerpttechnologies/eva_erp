@@ -2,18 +2,34 @@ const Task = require('../../models/crm/Task');
 
 const taskController = {
   // Get all tasks
-  getTasks: async (req, res) => {
-    try {
-      const { companyId, financialYear } = req.query;
-      const tasks = await Task.find({ companyId, financialYear })
-        .populate('projectId', 'projectName')
-        .sort({ createdAt: -1 });
-      res.json(tasks);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  },
+  // getTasks: async (req, res) => {
+  //   try {
+  //     const { companyId, financialYear } = req.query;
+  //     const tasks = await Task.find({ companyId, financialYear })
+  //       .populate('projectId', 'projectName')
+  //       .sort({ createdAt: -1 });
+  //     res.json(tasks);
+  //   } catch (error) {
+  //     res.status(500).json({ error: error.message });
+  //   }
+  // },
 
+getTasks: async (req, res) => {
+  try {
+    const tasks = await Task.find({})
+      .populate('projectId', 'projectName')
+      .populate('assignedTo', 'firstName lastName')
+      .sort({ createdAt: -1 });
+
+    console.log("🔥 TOTAL TASKS:", tasks.length);
+
+    res.json(tasks);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+},
   // Create new task
   createTask: async (req, res) => {
     try {

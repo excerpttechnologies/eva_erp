@@ -2,26 +2,75 @@ const ContactStage = require('../../models/crm/ContactStage');
 
 const contactStageController = {
   // Get all contact stages
-  getContactStages: async (req, res) => {
-    try {
-      const { companyId, financialYear } = req.query;
-      const contactStages = await ContactStage.find({ companyId, financialYear }).sort({ order: 1 });
-      res.json(contactStages);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+  // getContactStages: async (req, res) => {
+  //   try {
+  //     const { companyId, financialYear } = req.query;
+  //     const contactStages = await ContactStage.find({ companyId, financialYear }).sort({ order: 1 });
+  //     res.json(contactStages);
+  //   } catch (error) {
+  //     res.status(500).json({ error: error.message });
+  //   }
+  // },
+
+
+
+
+getContactStages: async (req, res) => {
+  try {
+    let { companyId, financialYear } = req.query;
+
+    const query = {};
+
+    if (companyId && companyId !== "null" && companyId !== "undefined") {
+      query.companyId = companyId;
     }
-  },
+
+    if (financialYear && financialYear !== "null" && financialYear !== "undefined") {
+      query.financialYear = financialYear.trim();
+    }
+
+    console.log("🔥 QUERY:", query);
+
+    const contactStages = await ContactStage.find(query).sort({ order: 1 });
+
+    res.json(contactStages);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+},
+
+
+
+
+
+
+
 
   // Create new contact stage
-  createContactStage: async (req, res) => {
-    try {
-      const contactStage = new ContactStage(req.body);
-      await contactStage.save();
-      res.status(201).json(contactStage);
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
-  },
+  // createContactStage: async (req, res) => {
+  //   try {
+  //     const contactStage = new ContactStage(req.body);
+  //     await contactStage.save();
+  //     res.status(201).json(contactStage);
+  //   } catch (error) {
+  //     res.status(400).json({ error: error.message });
+  //   }
+  // },
+
+createContactStage: async (req, res) => {
+  try {
+    console.log("📥 BODY:", req.body);
+
+    const contactStage = new ContactStage(req.body);
+    await contactStage.save();
+
+    res.status(201).json(contactStage);
+  } catch (error) {
+    console.error("❌ CREATE ERROR:", error.message);
+    res.status(400).json({ error: error.message });
+  }
+},
 
   // Get contact stage by ID
   getContactStageById: async (req, res) => {

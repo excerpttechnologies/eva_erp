@@ -47,8 +47,8 @@ async function checkExternalCustomerIdExists(externalCustomerId) {
 // Create Customer
 exports.createCustomer = async (req, res) => {
   try {
-    const { customerType, externalCustomerId, categoryId, ...otherData } = req.body;
-    
+    const { customerType, externalCustomerId, categoryId, gstin,...otherData } = req.body;
+     console.log("GSTIN:", gstin);   
     let cnNo;
     console.log("cutsromer",req.body)
     // Validate customer type
@@ -97,7 +97,8 @@ exports.createCustomer = async (req, res) => {
       categoryId: categoryId || null,
       cnNo: cnNo,
       customerType: customerType,
-      externalCustomerId: customerType === 'external' ? externalCustomerId.trim() : null
+      externalCustomerId: customerType === 'external' ? externalCustomerId.trim() : null,
+    gstin: gstin ? gstin.trim().toUpperCase() : ''
     });
     
     await newCustomer.save();

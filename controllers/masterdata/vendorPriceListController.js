@@ -32,23 +32,89 @@ exports.createVendorPrice = async (req, res) => {
 };
 
 // Get All
+// exports.getAllVendorPrices = async (req, res) => {
+//   try {
+
+//      const { companyId, financialYear } = req.query;
+// console.log("vendir prive",req.query )
+//     const filter = {};
+//     // if (companyId) filter.companyId = companyId;
+//     // if (financialYear) filter.financialYear = financialYear;
+
+
+//     if (companyId && companyId !== "null" && companyId !== "undefined") {
+//   filter.companyId = companyId;
+// }
+
+// if (financialYear && financialYear !== "null" && financialYear !== "undefined") {
+//   filter.financialYear = financialYear.trim();
+// }
+
+//     const entries = await VendorPriceList.find(filter)
+//       .populate('categoryId', 'categoryName')
+//       .populate('vendorId', 'name1')
+//       .populate('materialId', 'description baseUnit orderUnit conversionValue');
+//     res.json(entries);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error fetching vendor prices' });
+//   }
+// };
+
+
 exports.getAllVendorPrices = async (req, res) => {
   try {
+    let { companyId, financialYear, page = 1, limit = 10 } = req.query;
 
-     const { companyId, financialYear } = req.query;
-console.log("vendir prive",req.query )
+    console.log("vendor price query:", req.query);
+
     const filter = {};
-    if (companyId) filter.companyId = companyId;
-    if (financialYear) filter.financialYear = financialYear;
 
+    // Clean filters
+    if (companyId && companyId !== "null" && companyId !== "undefined") {
+      filter.companyId = companyId;
+    }
 
-    const entries = await VendorPriceList.find(filter)
-      .populate('categoryId', 'categoryName')
-      .populate('vendorId', 'name1')
-      .populate('materialId', 'description baseUnit orderUnit conversionValue');
-    res.json(entries);
+    if (financialYear && financialYear !== "null" && financialYear !== "undefined") {
+      filter.financialYear = financialYear.trim();
+    }
+
+    // Pagination safety
+    page = Math.max(parseInt(page) || 1, 1);
+    limit = Math.min(Math.max(parseInt(limit) || 10, 1), 100); // max 100 limit
+
+    const skip = (page - 1) * limit;
+
+    // Run queries in parallel (faster 🚀)
+    const [total, entries] = await Promise.all([
+      VendorPriceList.countDocuments(filter),
+      VendorPriceList.find(filter)
+        .populate('categoryId', 'categoryName')
+        .populate('vendorId', 'name1')
+        .populate('materialId', 'description baseUnit orderUnit conversionValue')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: entries,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page * limit < total,
+        hasPrevPage: page > 1
+      }
+    });
+
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching vendor prices' });
+    console.error("Pagination Error:", error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching vendor prices'
+    });
   }
 };
 

@@ -6,6 +6,8 @@ const customerPriceListSchema = new mongoose.Schema({
   materialId: { type: mongoose.Schema.Types.ObjectId, ref: 'Material', required: true },
   unit: { type: String, required: true },
   bum: { type: Number, required: true },
+  contactPerson: String,
+  contactNo: String,
   price: { type: Number, required: true, min: 0 }, // Added price field
   orderUnit: { type: String, required: true },
   salesGroup: { type: String, required: true },

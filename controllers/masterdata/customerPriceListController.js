@@ -26,7 +26,7 @@ const CustomerPriceList = require('../../models/masterdata/CustomerPriceList');
 
 exports.createCustomerPrice = async (req, res) => {
   try {
-    const { categoryId, customerId, materialId, unit, bum, price, orderUnit, salesGroup, taxId, tandc, companyId, financialYear } = req.body;
+    const { categoryId, customerId, materialId, unit, bum, price, orderUnit, salesGroup, taxId, tandc, companyId, financialYear ,contactPerson, contactNo} = req.body;
 
     // Validate required fields (including price)
     if (!categoryId || !customerId || !materialId || !unit || !bum || !price || !orderUnit || !salesGroup) {
@@ -39,14 +39,16 @@ exports.createCustomerPrice = async (req, res) => {
       customerId,
       materialId,
       unit,
-      bum,
-      price,
+      bum: Number(bum),
+      price: Number(price),
       orderUnit,
       salesGroup,
       taxId: taxId || null,
       tandc,
       companyId,
-      financialYear
+      financialYear,
+      contactPerson: contactPerson || "", // ✅ ADD
+      contactNo: contactNo || ""  // ✅ ADD
     };
 
     const newEntry = new CustomerPriceList(dataToSave);
@@ -57,7 +59,7 @@ exports.createCustomerPrice = async (req, res) => {
       data: savedEntry 
     });
   } catch (error) {
-    console.error('Error creating customer price list:', error);
+    console.error("CREATE ERROR:", error);
     res.status(500).json({ 
       message: 'Server Error',
       error: error.message 
@@ -94,9 +96,32 @@ exports.getCustomerPriceById = async (req, res) => {
   }
 };
 
+// exports.updateCustomerPrice = async (req, res) => {
+//   try {
+//     const updated = await CustomerPriceList.findByIdAndUpdate(req.params.id, req.body, { new: true });
+//     res.json({ message: 'Updated successfully', data: updated });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: 'Update failed' });
+//   }
+// };
+
+
+
 exports.updateCustomerPrice = async (req, res) => {
   try {
-    const updated = await CustomerPriceList.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updatedData = {
+      ...req.body,
+      contactPerson: req.body.contactPerson || "",
+      contactNo: req.body.contactNo || ""
+    };
+
+    const updated = await CustomerPriceList.findByIdAndUpdate(
+      req.params.id,
+      updatedData,
+      { new: true }
+    );
+
     res.json({ message: 'Updated successfully', data: updated });
   } catch (error) {
     console.error(error);

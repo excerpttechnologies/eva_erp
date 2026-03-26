@@ -16,6 +16,12 @@ const customerSchema = new mongoose.Schema({
   contactNo: String,
   name: String,
   email: String,
+gstin: {
+    type: String,
+    trim: true,
+    uppercase: true, // auto uppercase
+    default: ''
+  },
   isDeleted: {
     type: Boolean,
     default: false

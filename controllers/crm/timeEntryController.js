@@ -2,18 +2,39 @@ const TimeEntry = require('../../models/crm/TimeEntry');
 
 const timeEntryController = {
   // Get all time entries
-  getTimeEntries: async (req, res) => {
-    try {
-      const { companyId, financialYear } = req.query;
-      const timeEntries = await TimeEntry.find({ companyId, financialYear })
-        .populate('projectId', 'projectName')
-        .populate('taskId', 'taskName')
-        .sort({ date: -1, createdAt: -1 });
-      res.json(timeEntries);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  },
+  // getTimeEntries: async (req, res) => {
+  //   try {
+  //     const { companyId, financialYear } = req.query;
+  //     const timeEntries = await TimeEntry.find({ companyId, financialYear })
+  //       .populate('projectId', 'projectName')
+  //       .populate('taskId', 'taskName')
+  //       .sort({ date: -1, createdAt: -1 });
+  //     res.json(timeEntries);
+  //   } catch (error) {
+  //     res.status(500).json({ error: error.message });
+  //   }
+  // },
+
+getTimeEntries: async (req, res) => {
+  try {
+    const { companyId, financialYear } = req.query;
+
+    const query = {};
+
+    if (companyId) query.companyId = companyId;
+    if (financialYear) query.financialYear = financialYear.trim();
+
+    const timeEntries = await TimeEntry.find(query)
+      .populate('projectId', 'projectName')
+      .populate('taskId', 'taskName')
+      .sort({ date: -1, createdAt: -1 });
+
+    res.json(timeEntries);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+},
+
 
   // Create new time entry
   createTimeEntry: async (req, res) => {
@@ -94,3 +115,15 @@ const timeEntryController = {
 };
 
 module.exports = timeEntryController;
+
+
+
+
+
+
+
+
+
+
+
+

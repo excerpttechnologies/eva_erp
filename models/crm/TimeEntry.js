@@ -43,7 +43,7 @@ const timeEntrySchema = new mongoose.Schema({
   },
   financialYear: {
     type: String,
-    required: true
+   default: null
   },
   isActive: {
     type: Boolean,

@@ -69,19 +69,6 @@
 
 // module.exports = campaignController;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 // const Campaign = require('../../models/crm/Campaign');
 
 // const campaignController = {
@@ -229,41 +216,40 @@
 
 // module.exports = campaignController;
 
-
-
-
-
-
-
-
-
-
-const Campaign = require('../../models/crm/Campaign');
+const Campaign = require("../../models/crm/Campaign");
 
 // Helper to sanitize and normalize request body
 const sanitizeCampaignBody = (body) => {
   const sanitized = { ...body };
 
   // Convert channels from string to array if needed
-  if (typeof sanitized.channels === 'string') {
+  if (typeof sanitized.channels === "string") {
     sanitized.channels = sanitized.channels
-      .split(',')
-      .map(c => c.trim())
+      .split(",")
+      .map((c) => c.trim())
       .filter(Boolean);
   }
 
   // Convert objectives from string to array if needed
-  if (typeof sanitized.objectives === 'string') {
+  if (typeof sanitized.objectives === "string") {
     sanitized.objectives = sanitized.objectives
-      .split('\n')
-      .map(o => o.trim())
+      .split("\n")
+      .map((o) => o.trim())
       .filter(Boolean);
   }
 
   // Convert numeric fields
-  const numericFields = ['budget', 'expectedROI', 'actualROI', 'leads', 'conversions', 'clickThroughRate', 'openRate'];
-  numericFields.forEach(field => {
-    if (sanitized[field] !== undefined && sanitized[field] !== '') {
+  const numericFields = [
+    "budget",
+    "expectedROI",
+    "actualROI",
+    "leads",
+    "conversions",
+    "clickThroughRate",
+    "openRate",
+  ];
+  numericFields.forEach((field) => {
+    if (sanitized[field] !== undefined && sanitized[field] !== "") {
       sanitized[field] = Number(sanitized[field]);
     }
   });
@@ -272,26 +258,29 @@ const sanitizeCampaignBody = (body) => {
 };
 
 const campaignController = {
-
   // GET ALL
   getCampaigns: async (req, res) => {
     try {
       const { companyId, financialYear } = req.query;
 
       if (!companyId) {
-        return res.status(400).json({ error: 'companyId is required' });
+        return res.status(400).json({ error: "companyId is required" });
       }
 
       const query = { companyId };
 
-      if (financialYear && financialYear !== 'undefined' && financialYear !== 'null') {
+      if (
+        financialYear &&
+        financialYear !== "undefined" &&
+        financialYear !== "null"
+      ) {
         query.financialYear = financialYear;
       }
 
       const campaigns = await Campaign.find(query).sort({ createdAt: -1 });
       res.json(campaigns);
     } catch (error) {
-      console.error('getCampaigns error:', error);
+      console.error("getCampaigns error:", error);
       res.status(500).json({ error: error.message });
     }
   },
@@ -301,7 +290,7 @@ const campaignController = {
     try {
       const campaign = await Campaign.findById(req.params.id);
       if (!campaign) {
-        return res.status(404).json({ error: 'Campaign not found' });
+        return res.status(404).json({ error: "Campaign not found" });
       }
       res.json(campaign);
     } catch (error) {
@@ -315,17 +304,17 @@ const campaignController = {
       const body = req.body;
 
       if (!body.campaignName?.trim()) {
-        return res.status(400).json({ error: 'campaignName is required' });
+        return res.status(400).json({ error: "campaignName is required" });
       }
       if (!body.companyId) {
-        return res.status(400).json({ error: 'companyId is required' });
+        return res.status(400).json({ error: "companyId is required" });
       }
 
       const campaign = new Campaign(sanitizeCampaignBody(body));
       await campaign.save();
       res.status(201).json(campaign);
     } catch (error) {
-      console.error('createCampaign error:', error);
+      console.error("createCampaign error:", error);
       res.status(400).json({ error: error.message });
     }
   },
@@ -336,15 +325,15 @@ const campaignController = {
       const campaign = await Campaign.findByIdAndUpdate(
         req.params.id,
         sanitizeCampaignBody(req.body),
-        { new: true, runValidators: true }
+        { new: true, runValidators: true },
       );
 
       if (!campaign) {
-        return res.status(404).json({ error: 'Campaign not found' });
+        return res.status(404).json({ error: "Campaign not found" });
       }
       res.json(campaign);
     } catch (error) {
-      console.error('updateCampaign error:', error);
+      console.error("updateCampaign error:", error);
       res.status(400).json({ error: error.message });
     }
   },
@@ -354,13 +343,13 @@ const campaignController = {
     try {
       const campaign = await Campaign.findByIdAndDelete(req.params.id);
       if (!campaign) {
-        return res.status(404).json({ error: 'Campaign not found' });
+        return res.status(404).json({ error: "Campaign not found" });
       }
-      res.json({ message: 'Deleted successfully' });
+      res.json({ message: "Deleted successfully" });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
-  }
+  },
 };
 
 module.exports = campaignController; // ✅ THIS WAS MISSING

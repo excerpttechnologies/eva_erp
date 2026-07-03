@@ -1,5 +1,5 @@
-const Billing = require('../../models/accounts/Billing');
-const BillingCategory = require('../../models/categories/BillingCategory');
+const Billing = require("../../models/accounts/Billing");
+const BillingCategory = require("../../models/categories/BillingCategory");
 
 // POST /api/Billingform
 const createBilling = async (req, res) => {
@@ -10,23 +10,29 @@ const createBilling = async (req, res) => {
       return res.status(400).json({ message: "Category is required" });
     }
 
-    const category = await BillingCategory.findOne({ categoryName: data.category });
+    const category = await BillingCategory.findOne({
+      categoryName: data.category,
+    });
 
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }
 
-    const BillingCount = await Billing.countDocuments({ category: data.category });
+    const BillingCount = await Billing.countDocuments({
+      category: data.category,
+    });
     const nextNumber = category.rangeStart + BillingCount;
 
     if (category.rangeEnd && nextNumber > category.rangeEnd) {
-      return res.status(400).json({ message: "Document number range exceeded for this category." });
+      return res
+        .status(400)
+        .json({ message: "Document number range exceeded for this category." });
     }
 
     const docnumber = `${nextNumber}`;
 
-   const totalAmount = data.items?.reduce((sum, item) => {
-      return sum + ((item.quantity || 0) * (item.price || 0));
+    const totalAmount = data.items?.reduce((sum, item) => {
+      return sum + (item.quantity || 0) * (item.price || 0);
     }, 0);
 
     const discount = parseFloat(data.discount || 0);
@@ -49,17 +55,17 @@ const createBilling = async (req, res) => {
     const newBilling = new Billing({
       ...data,
       docnumber,
-      
-    })
+    });
 
     await newBilling.save();
     res.status(201).json({ message: "Billing created", docnumber });
   } catch (err) {
     console.error("Error creating Billing:", err);
-    res.status(500).json({ message: "Internal Server Error", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: err.message });
   }
 };
-
 
 // GET /api/Billingform
 const getAllBillings = async (req, res) => {
@@ -68,7 +74,9 @@ const getAllBillings = async (req, res) => {
     const filter = {};
     if (companyId) filter.companyId = companyId;
     if (financialYear) filter.financialYear = financialYear;
-    const Billings = await Billing.find(filter).sort({ createdAt: -1 }).populate("salesOrderId");
+    const Billings = await Billing.find(filter)
+      .sort({ createdAt: -1 })
+      .populate("salesOrderId");
     res.json(Billings);
   } catch (err) {
     console.error("Error fetching Billings:", err);
@@ -91,18 +99,20 @@ const updateBilling = async (req, res) => {
       id,
       {
         ...updateData,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).populate("salesOrderId");
 
     res.json({
       message: "Billing updated successfully",
-      billing: updatedBilling
+      billing: updatedBilling,
     });
   } catch (err) {
     console.error("Error updating billing:", err);
-    res.status(500).json({ message: "Internal Server Error", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: err.message });
   }
 };
 
@@ -111,7 +121,7 @@ const getBillingById = async (req, res) => {
   try {
     const { id } = req.params;
     const billing = await Billing.findById(id).populate("salesOrderId");
-    
+
     if (!billing) {
       return res.status(404).json({ message: "Billing record not found" });
     }
@@ -119,12 +129,14 @@ const getBillingById = async (req, res) => {
     res.json(billing);
   } catch (err) {
     console.error("Error fetching billing:", err);
-    res.status(500).json({ message: "Internal Server Error", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: err.message });
   }
 };
 module.exports = {
   createBilling,
   getAllBillings,
   updateBilling,
-  getBillingById
+  getBillingById,
 };

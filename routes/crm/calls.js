@@ -19,32 +19,23 @@
 
 // module.exports = router;
 
-
-
-
-
-
-
-
-
-
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const callController = require('../../controllers/crm/callController');
+const callController = require("../../controllers/crm/callController");
 
 // GET all
-router.get('/', callController.getCalls);
+router.get("/", callController.getCalls);
 
 // POST
-router.post('/', callController.createCall);
+router.post("/", callController.createCall);
 
 // GET by ID
-router.get('/:id', callController.getCallById);
+router.get("/:id", callController.getCallById);
 
 // PUT
-router.put('/:id', callController.updateCall);
+router.put("/:id", callController.updateCall);
 
 // DELETE
-router.delete('/:id', callController.deleteCall);
+router.delete("/:id", callController.deleteCall);
 
 module.exports = router;

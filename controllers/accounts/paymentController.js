@@ -1,15 +1,13 @@
-
-
-const Payment = require('../../models/accounts/Payments');
-const Invoice = require('../../models/accounts/Invoice');
-const Billing = require('../../models/accounts/Billing');
-const mongoose = require('mongoose');
+const Payment = require("../../models/accounts/Payments");
+const Invoice = require("../../models/accounts/Invoice");
+const Billing = require("../../models/accounts/Billing");
+const mongoose = require("mongoose");
 // Helper function to get current financial year
 function getCurrentFinancialYear() {
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth();
-  
+
   // Assuming financial year starts from April (month 3)
   if (month >= 3) {
     return `${year}-${year + 1}`;
@@ -22,29 +20,34 @@ function getCurrentFinancialYear() {
 const createPayment = async (req, res) => {
   try {
     const paymentData = req.body;
-    
+
     // Validate required fields
-    if (!paymentData.recordId || !paymentData.paymentAmount || !paymentData.recordType) {
-      return res.status(400).json({ 
-        message: "Record ID, payment amount, and record type are required" 
+    if (
+      !paymentData.recordId ||
+      !paymentData.paymentAmount ||
+      !paymentData.recordType
+    ) {
+      return res.status(400).json({
+        message: "Record ID, payment amount, and record type are required",
       });
     }
 
     // Determine recordModel based on recordType
-    const recordModel = paymentData.recordType === 'vendor' ? 'Invoice' : 'Billing';
+    const recordModel =
+      paymentData.recordType === "vendor" ? "Invoice" : "Billing";
 
     // Generate payment document number
     const count = await Payment.countDocuments({
       recordType: paymentData.recordType,
       createdAt: {
         $gte: new Date(new Date().getFullYear(), 0, 1),
-        $lt: new Date(new Date().getFullYear() + 1, 0, 1)
-      }
+        $lt: new Date(new Date().getFullYear() + 1, 0, 1),
+      },
     });
-    
-    const prefix = paymentData.recordType === 'vendor' ? 'VP' : 'CP';
+
+    const prefix = paymentData.recordType === "vendor" ? "VP" : "CP";
     const year = new Date().getFullYear().toString().slice(-2);
-    const sequence = (count + 1).toString().padStart(4, '0');
+    const sequence = (count + 1).toString().padStart(4, "0");
     const paymentDocNumber = `${prefix}${year}${sequence}`;
 
     // Create new payment record with all required fields
@@ -52,10 +55,10 @@ const createPayment = async (req, res) => {
       ...paymentData,
       recordModel: recordModel,
       paymentDocNumber: paymentDocNumber,
-      createdBy: req.user?.username || 'system',
+      createdBy: req.user?.username || "system",
       financialYear: paymentData.financialYear || getCurrentFinancialYear(),
       companyId: paymentData.companyId,
-      paymentDate: paymentData.paymentDate || new Date()
+      paymentDate: paymentData.paymentDate || new Date(),
     });
 
     await newPayment.save();
@@ -63,13 +66,13 @@ const createPayment = async (req, res) => {
     res.status(201).json({
       message: "Payment recorded successfully",
       payment: newPayment,
-      paymentDocNumber: newPayment.paymentDocNumber
+      paymentDocNumber: newPayment.paymentDocNumber,
     });
   } catch (err) {
     console.error("Error creating payment:", err);
-    res.status(500).json({ 
-      message: "Internal Server Error", 
-      error: err.message 
+    res.status(500).json({
+      message: "Internal Server Error",
+      error: err.message,
     });
   }
 };
@@ -77,17 +80,17 @@ const createPayment = async (req, res) => {
 // GET /api/payment - Get all payments with filters
 const getAllPayments = async (req, res) => {
   try {
-    const { 
-      recordType, 
-      status, 
-      paymentMethod, 
-      startDate, 
-      endDate, 
+    const {
+      recordType,
+      status,
+      paymentMethod,
+      startDate,
+      endDate,
       entityName,
       companyId,
       financialYear,
       page = 1,
-      limit = 10
+      limit = 10,
     } = req.query;
 
     // Build filter object
@@ -95,10 +98,10 @@ const getAllPayments = async (req, res) => {
     if (recordType) filter.recordType = recordType;
     if (status) filter.status = status;
     if (paymentMethod) filter.paymentMethod = paymentMethod;
-    if (entityName) filter.entityName = new RegExp(entityName, 'i');
+    if (entityName) filter.entityName = new RegExp(entityName, "i");
     if (companyId) filter.companyId = companyId;
     if (financialYear) filter.financialYear = financialYear;
-    
+
     if (startDate || endDate) {
       filter.paymentDate = {};
       if (startDate) filter.paymentDate.$gte = new Date(startDate);
@@ -107,13 +110,13 @@ const getAllPayments = async (req, res) => {
 
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    
+
     // Get payments with pagination
     const payments = await Payment.find(filter)
       .sort({ paymentDate: -1 })
       .skip(skip)
       .limit(parseInt(limit))
-      .populate('recordId');
+      .populate("recordId");
 
     // Get total count for pagination
     const totalCount = await Payment.countDocuments(filter);
@@ -126,8 +129,8 @@ const getAllPayments = async (req, res) => {
         totalPages,
         totalCount,
         hasNext: parseInt(page) < totalPages,
-        hasPrev: parseInt(page) > 1
-      }
+        hasPrev: parseInt(page) > 1,
+      },
     });
   } catch (err) {
     console.error("Error fetching payments:", err);
@@ -139,8 +142,8 @@ const getAllPayments = async (req, res) => {
 const getPaymentById = async (req, res) => {
   try {
     const { id } = req.params;
-    const payment = await Payment.findById(id).populate('recordId');
-    
+    const payment = await Payment.findById(id).populate("recordId");
+
     if (!payment) {
       return res.status(404).json({ message: "Payment not found" });
     }
@@ -156,32 +159,31 @@ const getPaymentById = async (req, res) => {
 const getPaymentsByRecord = async (req, res) => {
   try {
     const { recordId } = req.params;
-    const payments = await Payment.find({ recordId })
-      .sort({ paymentDate: -1 });
-    
+    const payments = await Payment.find({ recordId }).sort({ paymentDate: -1 });
+
     // Get payment summary using mongoose.Types.ObjectId properly
-    const mongoose = require('mongoose');
+    const mongoose = require("mongoose");
     const summary = await Payment.aggregate([
       { $match: { recordId: new mongoose.Types.ObjectId(recordId) } },
       {
         $group: {
           _id: null,
-          totalPaid: { $sum: '$paymentAmount' },
+          totalPaid: { $sum: "$paymentAmount" },
           paymentCount: { $sum: 1 },
-          lastPaymentDate: { $max: '$paymentDate' },
-          lastPaymentAmount: { $last: '$paymentAmount' }
-        }
-      }
+          lastPaymentDate: { $max: "$paymentDate" },
+          lastPaymentAmount: { $last: "$paymentAmount" },
+        },
+      },
     ]);
-    
+
     res.json({
       payments,
       summary: summary[0] || {
         totalPaid: 0,
         paymentCount: 0,
         lastPaymentDate: null,
-        lastPaymentAmount: 0
-      }
+        lastPaymentAmount: 0,
+      },
     });
   } catch (err) {
     console.error("Error fetching payments by record:", err);
@@ -199,10 +201,10 @@ const updatePayment = async (req, res) => {
       id,
       {
         ...updateData,
-        updatedBy: req.user?.username || 'system',
-        updatedAt: new Date()
+        updatedBy: req.user?.username || "system",
+        updatedAt: new Date(),
       },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     if (!updatedPayment) {
@@ -211,7 +213,7 @@ const updatePayment = async (req, res) => {
 
     res.json({
       message: "Payment updated successfully",
-      payment: updatedPayment
+      payment: updatedPayment,
     });
   } catch (err) {
     console.error("Error updating payment:", err);
@@ -223,15 +225,15 @@ const updatePayment = async (req, res) => {
 const deletePayment = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const cancelledPayment = await Payment.findByIdAndUpdate(
       id,
-      { 
-        status: 'cancelled',
-        updatedBy: req.user?.username || 'system',
-        updatedAt: new Date()
+      {
+        status: "cancelled",
+        updatedBy: req.user?.username || "system",
+        updatedAt: new Date(),
       },
-      { new: true }
+      { new: true },
     );
 
     if (!cancelledPayment) {
@@ -240,7 +242,7 @@ const deletePayment = async (req, res) => {
 
     res.json({
       message: "Payment cancelled successfully",
-      payment: cancelledPayment
+      payment: cancelledPayment,
     });
   } catch (err) {
     console.error("Error cancelling payment:", err);
@@ -252,27 +254,32 @@ const deletePayment = async (req, res) => {
 const getPaymentSummary = async (req, res) => {
   try {
     const { companyId, financialYear, recordType } = req.query;
-    
-    console.log('Summary request params:', { companyId, financialYear, recordType });
-    
+
+    console.log("Summary request params:", {
+      companyId,
+      financialYear,
+      recordType,
+    });
+
     const matchFilter = {};
-    if (companyId) matchFilter.companyId = new mongoose.Types.ObjectId(companyId);
+    if (companyId)
+      matchFilter.companyId = new mongoose.Types.ObjectId(companyId);
     if (financialYear) matchFilter.financialYear = financialYear;
     if (recordType) matchFilter.recordType = recordType;
 
-    console.log('Match filter:', matchFilter);
+    console.log("Match filter:", matchFilter);
 
     // Get summary by record type
     const summary = await Payment.aggregate([
       { $match: matchFilter },
       {
         $group: {
-          _id: '$recordType',
-          totalAmount: { $sum: '$paymentAmount' },
+          _id: "$recordType",
+          totalAmount: { $sum: "$paymentAmount" },
           count: { $sum: 1 },
-          avgAmount: { $avg: '$paymentAmount' }
-        }
-      }
+          avgAmount: { $avg: "$paymentAmount" },
+        },
+      },
     ]);
 
     // Get summary by payment method
@@ -280,24 +287,32 @@ const getPaymentSummary = async (req, res) => {
       { $match: matchFilter },
       {
         $group: {
-          _id: '$paymentMethod',
-          totalAmount: { $sum: '$paymentAmount' },
-          count: { $sum: 1 }
-        }
-      }
+          _id: "$paymentMethod",
+          totalAmount: { $sum: "$paymentAmount" },
+          count: { $sum: 1 },
+        },
+      },
     ]);
 
     // Get today's summary
     const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-    
+    const startOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    const endOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + 1,
+    );
+
     const todayFilter = {
       ...matchFilter,
       paymentDate: {
         $gte: startOfDay,
-        $lt: endOfDay
-      }
+        $lt: endOfDay,
+      },
     };
 
     const todaySummary = await Payment.aggregate([
@@ -305,18 +320,18 @@ const getPaymentSummary = async (req, res) => {
       {
         $group: {
           _id: null,
-          totalAmount: { $sum: '$paymentAmount' },
-          count: { $sum: 1 }
-        }
-      }
+          totalAmount: { $sum: "$paymentAmount" },
+          count: { $sum: 1 },
+        },
+      },
     ]);
 
-    console.log('Summary results:', { summary, methodSummary, todaySummary });
+    console.log("Summary results:", { summary, methodSummary, todaySummary });
 
     res.json({
       byType: summary,
       byMethod: methodSummary,
-      today: todaySummary[0] || { totalAmount: 0, count: 0 }
+      today: todaySummary[0] || { totalAmount: 0, count: 0 },
     });
   } catch (err) {
     console.error("Error getting payment summary:", err);
@@ -331,5 +346,5 @@ module.exports = {
   getPaymentsByRecord,
   updatePayment,
   deletePayment,
-  getPaymentSummary
+  getPaymentSummary,
 };

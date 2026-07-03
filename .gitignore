@@ -9,7 +9,7 @@ logs/
 .env
 
 # # Build output
-# dist/
+
 # build/
 
 # OS generated files
@@ -23,3 +23,4 @@ Thumbs.db
 *.user
 *.userosscache
 *.sln.docstates
+dist26

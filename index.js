@@ -68,6 +68,12 @@ const leaveRoutes = require("./routes/hrms/Leave");
 
 const attendanceRoutes = require("./routes/hrms/attendanceRoutes");
 
+////////////////////////////////
+const processRoute = require("./routes/project_planing/processPlanRoutes");
+const processAttachmentRoutes = require("./routes/project_planing/processAttachmentRoutes");
+const processRiskRoutes = require("./routes/project_planing/processRiskRoutes");
+const processIssueRoutes = require("./routes/project_planing/processIssueRoutes");
+const processChangeRequestRoutes = require("./routes/project_planing/processChangeRequestRoutes");
 const emailSendRoutes = require("./email-send");
 
 const app = express();
@@ -109,6 +115,11 @@ app.get("/api/image/:filename", (req, res) => {
   }
 });
 
+app.use("/api/process/planing", processRoute);
+app.use("/api/process/attachments", processAttachmentRoutes);
+app.use("/api/process/risks", processRiskRoutes);
+app.use("/api/process/issues", processIssueRoutes);
+app.use("/api/process/change-requests", processChangeRequestRoutes);
 /////email-sending route
 app.use("/api/email", emailSendRoutes);
 

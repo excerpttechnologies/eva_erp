@@ -19,22 +19,14 @@
 
 // module.exports = router;
 
-
-
-
-
-
-
-
-
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const campaignController = require('../../controllers/crm/campaignController');
+const campaignController = require("../../controllers/crm/campaignController");
 
-router.get('/',        campaignController.getCampaigns);
-router.get('/:id',     campaignController.getCampaignById);
-router.post('/',       campaignController.createCampaign);
-router.put('/:id',     campaignController.updateCampaign);
-router.delete('/:id',  campaignController.deleteCampaign);
+router.get("/", campaignController.getCampaigns);
+router.get("/:id", campaignController.getCampaignById);
+router.post("/", campaignController.createCampaign);
+router.put("/:id", campaignController.updateCampaign);
+router.delete("/:id", campaignController.deleteCampaign);
 
 module.exports = router;

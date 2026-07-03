@@ -1,5 +1,5 @@
-const Invoice = require('../../models/accounts/Invoice');
-const InvoiceCategory = require('../../models/categories/InvoiceCategory');
+const Invoice = require("../../models/accounts/Invoice");
+const InvoiceCategory = require("../../models/categories/InvoiceCategory");
 
 // POST /api/invoiceform
 const createInvoice = async (req, res) => {
@@ -10,23 +10,29 @@ const createInvoice = async (req, res) => {
       return res.status(400).json({ message: "Category is required" });
     }
 
-    const category = await InvoiceCategory.findOne({ categoryName: data.category });
+    const category = await InvoiceCategory.findOne({
+      categoryName: data.category,
+    });
 
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }
 
-    const invoiceCount = await Invoice.countDocuments({ category: data.category });
+    const invoiceCount = await Invoice.countDocuments({
+      category: data.category,
+    });
     const nextNumber = category.rangeStart + invoiceCount;
 
     if (category.rangeEnd && nextNumber > category.rangeEnd) {
-      return res.status(400).json({ message: "Document number range exceeded for this category." });
+      return res
+        .status(400)
+        .json({ message: "Document number range exceeded for this category." });
     }
 
     const docnumber = `${nextNumber}`;
 
-  const totalAmount = data.items?.reduce((sum, item) => {
-      return sum + ((item.quantity || 0) * (item.price || 0));
+    const totalAmount = data.items?.reduce((sum, item) => {
+      return sum + (item.quantity || 0) * (item.price || 0);
     }, 0);
 
     const discount = parseFloat(data.discount || 0);
@@ -43,15 +49,16 @@ const createInvoice = async (req, res) => {
     res.status(201).json({ message: "Invoice created", docnumber });
   } catch (err) {
     console.error("Error creating invoice:", err);
-    res.status(500).json({ message: "Internal Server Error", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: err.message });
   }
 };
-
 
 // GET /api/invoiceform
 const getAllInvoices = async (req, res) => {
   try {
-         const { companyId, financialYear } = req.query;
+    const { companyId, financialYear } = req.query;
 
     const filter = {};
     if (companyId) filter.companyId = companyId;
@@ -82,18 +89,20 @@ const updateInvoice = async (req, res) => {
       id,
       {
         ...updateData,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     res.json({
       message: "Invoice updated successfully",
-      invoice: updatedInvoice
+      invoice: updatedInvoice,
     });
   } catch (err) {
     console.error("Error updating invoice:", err);
-    res.status(500).json({ message: "Internal Server Error", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: err.message });
   }
 };
 
@@ -102,7 +111,7 @@ const getInvoiceById = async (req, res) => {
   try {
     const { id } = req.params;
     const invoice = await Invoice.findById(id);
-    
+
     if (!invoice) {
       return res.status(404).json({ message: "Invoice record not found" });
     }
@@ -110,7 +119,9 @@ const getInvoiceById = async (req, res) => {
     res.json(invoice);
   } catch (err) {
     console.error("Error fetching invoice:", err);
-    res.status(500).json({ message: "Internal Server Error", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: err.message });
   }
 };
 
@@ -118,5 +129,5 @@ module.exports = {
   createInvoice,
   getAllInvoices,
   updateInvoice,
-  getInvoiceById
+  getInvoiceById,
 };
